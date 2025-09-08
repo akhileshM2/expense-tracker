@@ -41,3 +41,16 @@ accountRouter.post("/additem", async (req, res) => {
         id: request.id
     })
 })
+
+accountRouter.put("/changeitem", async (req, res) => {
+    const request = await prismaClient.items.update({
+        where: {
+            id: req.body.id,
+            user: req.body.email
+        },
+        data: {
+            item: req.body.item,
+            cost: req.body.cost
+        }
+    })
+})
