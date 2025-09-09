@@ -20,6 +20,9 @@ model User {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  children  User[]   @relation("ParentToChildren")
+  parent    User?    @relation("ParentToChildren", fields:[parentId], references: [id])
+  parentId  Int?
   item      Items[]
 }
 
@@ -29,4 +32,9 @@ model Items {
   cost        Int
   userId      Int
   user        User    @relation(fields: [userId], references: [id])
+}
+
+model Linked_User {
+  email     String   @unique
+  admin     String[]
 }
