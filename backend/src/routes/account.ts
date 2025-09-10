@@ -9,7 +9,7 @@ export const accountRouter = express.Router()
 accountRouter.get("/items", async (req, res) => {
     const itemList = await prismaClient.items.findMany({
         where: {
-            user: req.body.email
+            userId: req.body.email
         },
         select: {
             id: true,
@@ -32,7 +32,7 @@ accountRouter.post("/additem", async (req, res) => {
         data: {
             item: req.body.item,
             cost: req.body.cost,
-            user: req.body.email
+            userId: req.body.email
         }
     })
 
@@ -43,14 +43,37 @@ accountRouter.post("/additem", async (req, res) => {
 })
 
 accountRouter.put("/changeitem", async (req, res) => {
+    const userId = await prismaClient.items.findUnique({
+        where: {
+            item: req.body.item,
+            userId: req.body.email
+        },
+        select: {
+            id: true
+        }
+    })
+
+    if (!userId) {
+        res.status(411).json({
+            message: "User not found. Please try again."
+        })
+    }
+
     const request = await prismaClient.items.update({
         where: {
-            id: req.body.id,
-            user: req.body.email
+            id: userId?.id,
+            userId: req.body.email
         },
         data: {
-            item: req.body.item,
+            item: req.body.newItemName,
             cost: req.body.cost
         }
+    })
+
+    res.status(200).json({
+        message: "Item updated!",
+        id: request.id,
+        item: request.item,
+        cost: request.cost
     })
 })

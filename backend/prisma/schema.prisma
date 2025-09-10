@@ -28,10 +28,10 @@ model User {
 
 model Items {
   id          Int @id   @default(autoincrement())
-  item        String
+  item        String    @unique
   cost        Int
-  userId      Int
-  user        User    @relation(fields: [userId], references: [id])
+  userId      String
+  user          User    @relation(fields: [userId], references: [email])
 }
 
 model Linked_User {
