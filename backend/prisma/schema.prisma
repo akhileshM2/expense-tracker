@@ -20,21 +20,16 @@ model User {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  children  User[]   @relation("ParentToChildren")
-  parent    User?    @relation("ParentToChildren", fields:[parentId], references: [id])
-  parentId  Int?
   item      Items[]
 }
 
 model Items {
   id          Int @id   @default(autoincrement())
-  item        String    @unique
+  item        String
+  itemNo      Int
   cost        Int
   userId      String
-  user          User    @relation(fields: [userId], references: [email])
-}
+  user        User      @relation(fields: [userId], references: [email])
 
-model Linked_User {
-  email     String   @unique
-  admin     String[]
+  @@unique([userId, itemNo])
 }

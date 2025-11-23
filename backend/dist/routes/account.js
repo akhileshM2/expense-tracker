@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.accountRouter = void 0;
 const express_1 = __importDefault(require("express"));
 const db_1 = require("../db");
+const redisClient_1 = __importDefault(require("../redisClient"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 exports.accountRouter = express_1.default.Router();
@@ -24,37 +25,50 @@ exports.accountRouter.get("/items", (req, res) => __awaiter(void 0, void 0, void
             userId: req.body.email
         },
         select: {
-            id: true,
+            itemNo: true,
             item: true,
             cost: true
         }
     });
     res.status(200).json({
         items: itemList.map(items => ({
-            id: items.id,
+            id: items.itemNo,
             item: items.item,
             cost: items.cost
         }))
     });
 }));
 exports.accountRouter.post("/additem", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const key = `user:${req.body.email}:itemCounter`;
+    const nextItemNo = yield redisClient_1.default.incr(key);
     const request = yield db_1.prismaClient.items.create({
         data: {
             item: req.body.item,
+            itemNo: nextItemNo,
             cost: req.body.cost,
             userId: req.body.email
         }
     });
     res.json({
         message: "Item added!",
-        id: request.id
+        id: request.itemNo
     });
 }));
 exports.accountRouter.put("/changeitem", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const key = `user:${req.body.email}:itemCounter`;
+    const value = Number(yield redisClient_1.default.get(key));
+    if (!req.body.id && req.body.id != value) {
+        res.status(411).json({
+            message: "User not found. Please try again."
+        });
+    }
     const userId = yield db_1.prismaClient.items.findUnique({
         where: {
             item: req.body.item,
-            userId: req.body.email
+            userId_itemNo: {
+                userId: req.body.email,
+                itemNo: value
+            }
         },
         select: {
             id: true
@@ -81,4 +95,26 @@ exports.accountRouter.put("/changeitem", (req, res) => __awaiter(void 0, void 0,
         item: request.item,
         cost: request.cost
     });
+}));
+exports.accountRouter.delete("/removeitem/user/:userId/items/:itemNo", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { userId, itemNo } = req.params;
+    try {
+        const request = yield db_1.prismaClient.items.delete({
+            where: {
+                userId_itemNo: {
+                    userId: userId,
+                    itemNo: Number(itemNo)
+                }
+            }
+        });
+        res.status(200).json({
+            message: "Item deleted!",
+            itemNo: request.itemNo
+        });
+    }
+    catch (err) {
+        res.status(411).json({
+            message: "Item not found. Please try again."
+        });
+    }
 }));
