@@ -1,6 +1,6 @@
 import express from "express"
 import { prismaClient } from "../db";
-import { z } from "zod";
+import { email, z } from "zod";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../config";
 
@@ -66,12 +66,13 @@ userRouter.post('/signup', async (req, res) => {
                 password: req.body.password
             }
         })
-        const token = jwt.sign({id: request.id}, JWT_SECRET)
+        const token = jwt.sign({email: request.email}, JWT_SECRET)
 
         res.json({
             message: "Signed Up!",
-            id: request.id,
-            key: token
+            email: request.email,
+            key: token,
+            name: request.name
         })
     }
 })
@@ -97,22 +98,24 @@ userRouter.post("/signin", async (req, res) => {
         },
         select: {
             id: true,
-            name: true
+            name: true,
+            email: true
         }
     })
 
-    const userId = request? request.id : null
-    if (!userId) {
+    const email = request? request.email : null
+    if (!email) {
         res.status(411).json({
             message: "User does not exist, please try again!"
         })
     }
 
     else {
-        const token = jwt.sign({userId}, JWT_SECRET)
+        const token = jwt.sign({email}, JWT_SECRET)
         res.status(200).json({
             token: token,
-            name: request? request.name : null
+            name: request? request.name : null,
+            email: request?.email
         })
     }
 })

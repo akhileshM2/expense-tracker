@@ -11,6 +11,7 @@ export const Signup = () => {
     const [email, setEmail] = useState("")
     const [name, setName] = useState("")
     const [password, setPassword] = useState("")
+    const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
 
     return (<>
@@ -30,14 +31,18 @@ export const Signup = () => {
                     }} placeholder={"12345678"} label={"Password"} />
 
                     <div className="pt-4">
-                        <Button label={"Sign up"} onClick={async () => {
+                        <Button loading={loading} label={"Sign up"} onClick={async () => {
+                            setLoading(true)
                             const res = await axios.post("http://localhost:3000/api/v1/user/signup", {
                                 name,
                                 email,
                                 password
                             })
                             localStorage.setItem("token", res.data.key)
+                            localStorage.setItem("name", res.data.name)
+                            localStorage.setItem("email", res.data.email)
                             navigate("/dashboard")
+                            setLoading(false)
                         }}/>
                     </div>
                     <BottomWarning label={"Already have an account?"} buttonText={"Sign in"} to={"/signin"}/>

@@ -11,6 +11,7 @@ import axios from "axios"
 export const Signin = () => {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
+    const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
 
     return (<>
@@ -27,14 +28,17 @@ export const Signin = () => {
                     }} placeholder={"12345678"} label={"Password"} />
 
                     <div className="pt-4">
-                        <Button label={"Sign in"} onClick={async () => {
+                        <Button loading={loading} label={"Sign in"} onClick={async () => {
+                            setLoading(true)
                             const res = await axios.post("http://localhost:3000/api/v1/user/signin", {
                                 email,
                                 password
                             })
                             localStorage.setItem("token", res.data.token)
                             localStorage.setItem("name", res.data.name)
+                            localStorage.setItem("email", res.data.email)
                             navigate("/dashboard")
+                            setLoading(false)
                         }}/>
                     </div>
                     <BottomWarning label={"Don't have an account?"} buttonText={"Sign up"} to={"/signup"}/>

@@ -2,6 +2,8 @@ import express from "express"
 import { prismaClient } from "../db"
 import redis from "../redisClient"
 import { Prisma } from "@prisma/client"
+import { JWT_SECRET } from "../config"
+import jwt, { JwtPayload } from "jsonwebtoken"
 
 const app = express()
 app.use(express.json())
@@ -9,9 +11,14 @@ app.use(express.json())
 export const accountRouter = express.Router();
 
 accountRouter.get("/items", async (req, res) => {
+    const header = req.header("Authorization") || ""
+    const decoded = jwt.verify(header, JWT_SECRET) as JwtPayload
+    const email = decoded.email
+    console.log(decoded)
+
     const itemList = await prismaClient.items.findMany({
         where: {
-            userId: req.body.email
+            userId: email
         },
         select: {
             itemNo: true,
@@ -30,14 +37,26 @@ accountRouter.get("/items", async (req, res) => {
 })
 
 accountRouter.post("/additem", async (req, res) => {
-    const key = `user:${req.body.email}:itemCounter`;
+    const key = `user:${req.body.userId}:itemCounter`;
     const nextItemNo = await redis.incr(key);
+
+    const header = req.header("Authorization") || ""
+    const decoded = jwt.verify(header, JWT_SECRET) as JwtPayload
+    const email = decoded.email
+    console.log(decoded)
+
+    if (email != req.body.userId) {
+        res.status(411).json({
+            message: "User not found. Please try again."
+        })
+    }
+
     const request = await prismaClient.items.create({
         data: {
             item: req.body.item,
             itemNo: nextItemNo,
             cost: req.body.cost,
-            userId: req.body.email
+            userId: email
         }
     })
 
