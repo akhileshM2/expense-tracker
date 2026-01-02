@@ -113,7 +113,7 @@ export const Dashboard = () => {
                         <h2 className="text-xl font-bold text-gray-800">History</h2>
                         <div className="flex justify-end items-center mb-6">
                             <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-bold">
-                                {items.length} ITEMS
+                                {items.length === 1 ? `${items.length} ITEM` : `${items.length} ITEMS`}
                             </span>
                         </div>
                     </div>
