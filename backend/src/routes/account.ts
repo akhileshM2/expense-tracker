@@ -49,6 +49,7 @@ accountRouter.post("/additem", async (req, res) => {
         res.status(411).json({
             message: "User not found. Please try again."
         })
+        return
     }
 
     const request = await prismaClient.items.create({
@@ -67,13 +68,15 @@ accountRouter.post("/additem", async (req, res) => {
 })
 
 accountRouter.put("/changeitem", async (req, res) => {
-    const key = `user:${req.body.email}:itemCounter`;
-    const value = Number(await redis.get(key));
-    
-    if (!req.body.id && req.body.id != value) {
+    const header = req.header("Authorization") || ""
+    const decoded = jwt.verify(header, JWT_SECRET) as JwtPayload
+    const email = decoded.email
+
+    if (!req.body.id || email != req.body.email) {
         res.status(411).json({
             message: "User not found. Please try again."
         })
+        return
     }
 
     const userId = await prismaClient.items.findUnique({
@@ -81,7 +84,7 @@ accountRouter.put("/changeitem", async (req, res) => {
             item: req.body.item,
             userId_itemNo: {
                 userId: req.body.email,
-                itemNo: value
+                itemNo: req.body.id
             }
         },
         select: {
@@ -93,6 +96,7 @@ accountRouter.put("/changeitem", async (req, res) => {
         res.status(411).json({
             message: "User not found. Please try again."
         })
+        return
     }
 
     const request = await prismaClient.items.update({
@@ -116,6 +120,18 @@ accountRouter.put("/changeitem", async (req, res) => {
 
 accountRouter.delete("/removeitem/user/:userId/items/:itemNo", async (req, res) => {
     const {userId, itemNo} = req.params
+
+    const header = req.header("Authorization") || ""
+    const decoded = jwt.verify(header, JWT_SECRET) as JwtPayload
+    const email = decoded.email
+    console.log(decoded)
+
+    if (email != userId) {
+        res.status(411).json({
+            message: "User not found. Please try again."
+        })
+        return
+    }
 
     try {
         const request = await prismaClient.items.delete({
